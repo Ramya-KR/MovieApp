@@ -2,12 +2,17 @@ import React, { useEffect, useState } from "react";
 import Navbar from "./components/Navbar";
 import Movies from "./components/Movies";
 import WatchList from "./components/WatchList";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Banner from "./components/Banner";
 import { AppDataContext } from "./context/AppDataContext";
+import Login from "./components/Login";
+import Register from "./components/Register";
 
 function App() {
   const [watchlist, setWatchlist] = useState([]);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
   const handleAddToWatchList = (movie) => {
     let newWatchlist = [...watchlist, movie];
     localStorage.setItem("moviesAppData", JSON.stringify(newWatchlist));
@@ -21,15 +26,17 @@ function App() {
     setWatchlist(newWatchlist);
     localStorage.setItem("moviesAppData", JSON.stringify(newWatchlist));
   };
-
   useEffect(() => {
     let moviesFromLocalStorage = localStorage.getItem("moviesAppData");
+    const isUserLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (!moviesFromLocalStorage) {
       return;
     }
-    setWatchlist(JSON.parse(moviesFromLocalStorage));
-  }, []);
-
+    if (moviesFromLocalStorage) {
+      setWatchlist(JSON.parse(moviesFromLocalStorage));
+    }
+    setLoggedIn(JSON.parse(isUserLoggedIn));
+  }, [loggedIn]);
   return (
     <>
       <AppDataContext.Provider
@@ -38,22 +45,45 @@ function App() {
           setWatchlist,
           handleAddToWatchList,
           handleDeleteFromWatchlist,
+          userName,
+          setUserName,
+          password,
+          setPassword,
+          loggedIn,
+          setLoggedIn,
         }}
       >
         <BrowserRouter>
-          <Navbar />
-
           <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route
               path="/"
               element={
-                <>
-                  <Banner />
-                  <Movies />
-                </>
+                loggedIn ? (
+                  <>
+                    <Navbar />
+                    <Banner />
+                    <Movies />
+                  </>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
-            <Route path="/watchlist" element={<WatchList />} />
+            <Route
+              path="/watchlist"
+              element={
+                loggedIn ? (
+                  <>
+                    <Navbar />
+                    <WatchList />
+                  </>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
           </Routes>
         </BrowserRouter>
       </AppDataContext.Provider>
